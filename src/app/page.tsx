@@ -1,6 +1,11 @@
+"use client";
 import Link from "next/link";
+import { Button } from "~/components/ui/button";
+import { useSession, signIn } from "next-auth/react";
 
 export default function HomePage() {
+  const { data } = useSession();
+  console.log(data);
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-[#2e026d] to-[#15162c] text-white">
       <div className="container flex flex-col items-center justify-center gap-12 px-4 py-16">
@@ -29,7 +34,15 @@ export default function HomePage() {
               Learn more about Create T3 App, the libraries it uses, and how to
               deploy it.
             </div>
+            <button
+              onClick={async () => {
+                await signIn("google");
+              }}
+            >
+              Login
+            </button>
           </Link>
+          <Button> loveS</Button>
         </div>
       </div>
     </main>
