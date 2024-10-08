@@ -1,50 +1,81 @@
 "use client";
-import Link from "next/link";
-import { Button } from "~/components/ui/button";
-import { useSession, signIn } from "next-auth/react";
+import { useState, useRef } from "react";
+import axios from "axios";
+import html2pdf from "html2pdf.js";
 
-export default function HomePage() {
-  const { data } = useSession();
-  console.log(data);
+export default function HtmlToPdf() {
+  const [url, setUrl] = useState("");
+  const [pdfHtml, setPdfHtml] = useState(""); // HTML to be rendered
+  const [loading, setLoading] = useState(false); // Loading state
+  const resumeRef = useRef(); // Reference to the HTML content for PDF
+
+  // Function to generate the HTML resume
+  const generatePdf = async () => {
+    setLoading(true); // Set loading to true while fetching data
+    try {
+      const response = await axios.post("/api/makeresume", {
+        url,
+      });
+
+      // Log the backend HTML response to check if it's valid
+      console.log("Backend HTML response:", response.data.res);
+
+      // Assuming the backend returns HTML in the response
+      setPdfHtml(response.data.res); // Set the received HTML to state
+      setLoading(false); // Stop loading when data is fetched
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      setLoading(false); // Stop loading on error
+    }
+  };
+
+  // Function to download the rendered HTML content as a PDF
+  const downloadPdf = () => {
+    const element = resumeRef.current;
+    html2pdf()
+      .from(element)
+      .set({
+        margin: 1,
+        filename: "resume.pdf",
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: "in", format: "a4", orientation: "portrait" },
+      })
+      .save();
+  };
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-[#2e026d] to-[#15162c] text-white">
-      <div className="container flex flex-col items-center justify-center gap-12 px-4 py-16">
-        <h1 className="text-5xl font-extrabold tracking-tight text-white sm:text-[5rem]">
-          Create <span className="text-[hsl(280,100%,70%)]">T3</span> App
-        </h1>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-8">
-          <Link
-            className="flex max-w-xs flex-col gap-4 rounded-xl bg-white/10 p-4 text-white hover:bg-white/20"
-            href="https://create.t3.gg/en/usage/first-steps"
-            target="_blank"
-          >
-            <h3 className="text-2xl font-bold">First Steps →</h3>
-            <div className="text-lg">
-              Just the basics - Everything you need to know to set up your
-              database and authentication.
-            </div>
-          </Link>
-          <Link
-            className="flex max-w-xs flex-col gap-4 rounded-xl bg-white/10 p-4 text-white hover:bg-white/20"
-            href="https://create.t3.gg/en/introduction"
-            target="_blank"
-          >
-            <h3 className="text-2xl font-bold">Documentation →</h3>
-            <div className="text-lg">
-              Learn more about Create T3 App, the libraries it uses, and how to
-              deploy it.
-            </div>
-            <button
-              onClick={async () => {
-                await signIn("google");
-              }}
-            >
-              Login
-            </button>
-          </Link>
-          <Button>hii</Button>
-        </div>
-      </div>
-    </main>
+    <div>
+      <h1>Generate Resume PDF</h1>
+      <input
+        type="text"
+        value={url}
+        onChange={(e) => setUrl(e.target.value)}
+        placeholder="Enter a URL to fetch data"
+      />
+      <button onClick={generatePdf}>Generate PDF</button>
+
+      {/* Show loading indicator while fetching HTML */}
+      {loading && <p>Loading resume...</p>}
+
+      {/* Render the HTML received from the backend */}
+      {pdfHtml && (
+        <>
+          <div
+            ref={resumeRef} // Reference to be used for PDF generation
+            className="shadow-xl"
+            style={{
+              border: "1px solid #000",
+            }}
+            // Use dangerouslySetInnerHTML for testing the output
+            dangerouslySetInnerHTML={{ __html: pdfHtml }}
+          />
+
+          {/* Button to download the displayed HTML as a PDF */}
+          <button onClick={downloadPdf} style={{ marginTop: "20px" }}>
+            Download as PDF
+          </button>
+        </>
+      )}
+    </div>
   );
 }
