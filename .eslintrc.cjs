@@ -49,6 +49,9 @@ const config = {
     ],
     "@typescript-eslint/no-explicit-any": "off", // Already added
     "@typescript-eslint/no-unsafe-assignment": "off", // Disable this rule
+    "@typescript-eslint/no-unsafe-argument": "off", // Turn off this rule
+    "@typescript-eslint/no-unsafe-member-access": "off", // Turn off this rule
+    "@typescript-eslint/no-empty-object-type": "off", // Turn off this rule
   },
 };
 

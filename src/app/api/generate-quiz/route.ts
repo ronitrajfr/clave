@@ -64,7 +64,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       },
       { text: `input: ${input}` },
       {
-        text: 'output: {\n      "quiz": [\n        {\n          "question": "Your question here",\n          "options": [\n            "Option 1",\n            "Option 2",\n            "Option 3",\n            "Option 4"\n          ],\n          "correct_answer": "The correct answer",\n          "explanation": "The explanation for the correct answer."\n        }\n      ]\n    }',
+        text: 'output {\n      "quiz": [\n        {\n          "question": "Your question here",\n          "options": [\n            "Option 1",\n            "Option 2",\n            "Option 3",\n            "Option 4"\n          ],\n          "correct_answer": "The correct answer",\n          "explanation": "The explanation for the correct answer."\n        }\n      ]\n    }',
       },
     ];
 
@@ -74,9 +74,19 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       safetySettings,
     });
     const response = result.response.text();
-    const jsonRespone = JSON.parse(response); // Parse the text into JSON
-
-    return NextResponse.json({ jsonRespone }, { status: 200 });
+    // what if it starts with ```python??
+    if (response.startsWith("```json") && response.endsWith("```")) {
+      // Remove the backticks and parse the JSON
+      const jsonString = response.slice(7, -3).trim(); // Remove ```json at the start and ``` at the end
+      return NextResponse.json(
+        { res: JSON.parse(jsonString) },
+        { status: 200 },
+      );
+    } else {
+      // Parse directly if no backticks
+      return NextResponse.json({ res: JSON.parse(response) }, { status: 200 });
+    }
+    //console.log(response); // Parse the text into JSON
   } catch (error) {
     console.log(error);
     return NextResponse.json(
