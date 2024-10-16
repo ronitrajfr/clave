@@ -56,7 +56,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     }
 
     const { input } = parsedBody.data;
-    console.log(input);
 
     const parts = [
       {
@@ -74,7 +73,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       safetySettings,
     });
     const response = result.response.text();
-    // what if it starts with ```python??
     if (response.startsWith("```json") && response.endsWith("```")) {
       // Remove the backticks and parse the JSON
       const jsonString = response.slice(7, -3).trim(); // Remove ```json at the start and ``` at the end
@@ -86,7 +84,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       // Parse directly if no backticks
       return NextResponse.json({ res: JSON.parse(response) }, { status: 200 });
     }
-    //console.log(response); // Parse the text into JSON
   } catch (error) {
     console.log(error);
     return NextResponse.json(
