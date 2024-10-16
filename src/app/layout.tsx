@@ -1,5 +1,6 @@
 import "~/styles/globals.css";
 import Providers from "~/components/Provider";
+import { Toaster } from "~/components/ui/toaster";
 
 import { GeistSans } from "geist/font/sans";
 import { type Metadata } from "next";
@@ -17,6 +18,7 @@ export default function RootLayout({
     <html lang="en" className={`${GeistSans.variable}`}>
       <Providers>
         <body>{children}</body>
+        <Toaster />
       </Providers>
     </html>
   );

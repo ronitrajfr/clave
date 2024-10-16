@@ -8,6 +8,7 @@ import {
   text,
   timestamp,
   varchar,
+  jsonb,
 } from "drizzle-orm/pg-core";
 import { type AdapterAccount } from "next-auth/adapters";
 
@@ -31,13 +32,13 @@ export const posts = createTable(
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).$onUpdate(
-      () => new Date()
+      () => new Date(),
     ),
   },
   (example) => ({
     createdByIdIdx: index("created_by_idx").on(example.createdById),
     nameIndex: index("name_idx").on(example.name),
-  })
+  }),
 );
 
 export const users = createTable("user", {
@@ -84,7 +85,7 @@ export const accounts = createTable(
       columns: [account.provider, account.providerAccountId],
     }),
     userIdIdx: index("account_user_id_idx").on(account.userId),
-  })
+  }),
 );
 
 export const accountsRelations = relations(accounts, ({ one }) => ({
@@ -107,7 +108,7 @@ export const sessions = createTable(
   },
   (session) => ({
     userIdIdx: index("session_user_id_idx").on(session.userId),
-  })
+  }),
 );
 
 export const sessionsRelations = relations(sessions, ({ one }) => ({
@@ -126,5 +127,73 @@ export const verificationTokens = createTable(
   },
   (vt) => ({
     compoundKey: primaryKey({ columns: [vt.identifier, vt.token] }),
-  })
+  }),
 );
+
+//easier
+export const quizzes = createTable("quizzes", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  questions: jsonb("questions").notNull(),
+});
+
+export const questions = createTable("questions", {
+  id: serial("id").primaryKey(),
+  quizId: integer("quiz_id")
+    .references(() => quizzes.id)
+    .notNull(),
+  questionText: text("question_text").notNull(),
+  explanation: text("explanation").notNull(),
+});
+
+export const options = createTable("options", {
+  id: serial("id").primaryKey(),
+  questionId: integer("question_id")
+    .references(() => questions.id)
+    .notNull(),
+  optionText: text("option_text").notNull(),
+});
+
+export const correctAnswers = createTable("correct_answers", {
+  id: serial("id").primaryKey(),
+  questionId: integer("question_id")
+    .references(() => questions.id)
+    .notNull(),
+  optionId: integer("option_id")
+    .references(() => options.id)
+    .notNull(),
+});
+
+export const quizzesRelations = relations(quizzes, ({ many }) => ({
+  questions: many(questions),
+}));
+
+export const questionsRelations = relations(questions, ({ one, many }) => ({
+  quiz: one(quizzes, {
+    fields: [questions.quizId],
+    references: [quizzes.id],
+  }),
+  options: many(options),
+  correctAnswer: one(correctAnswers, {
+    fields: [questions.id],
+    references: [correctAnswers.questionId],
+  }),
+}));
+
+export const optionsRelations = relations(options, ({ one }) => ({
+  question: one(questions, {
+    fields: [options.questionId],
+    references: [questions.id],
+  }),
+}));
+
+export const correctAnswersRelations = relations(correctAnswers, ({ one }) => ({
+  question: one(questions, {
+    fields: [correctAnswers.questionId],
+    references: [questions.id],
+  }),
+  option: one(options, {
+    fields: [correctAnswers.optionId],
+    references: [options.id],
+  }),
+}));

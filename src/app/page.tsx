@@ -1,5 +1,4 @@
 "use client";
-
 import { useState } from "react";
 import axios from "axios";
 import { Button } from "~/components/ui/button";
@@ -10,10 +9,13 @@ import {
   CardHeader,
   CardTitle,
 } from "~/components/ui/card";
+import { useToast } from "~/hooks/use-toast";
 import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group";
 import { Label } from "~/components/ui/label";
 import { Input } from "~/components/ui/input";
 import { CheckCircle2, XCircle } from "lucide-react";
+import { PublishQuiz } from "~/action";
+import { useRouter } from "next/navigation";
 
 interface QuizQuestion {
   question: string;
@@ -34,6 +36,8 @@ export default function QuizApp() {
   const [selectedAnswer, setSelectedAnswer] = useState("");
   const [showResult, setShowResult] = useState(false);
   const [score, setScore] = useState(0);
+  const { toast } = useToast();
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -42,6 +46,7 @@ export default function QuizApp() {
       const res = await axios.post("/api/generate-quiz", {
         input: userInput,
       });
+      console.log(res.data.res);
       setQuizData(res.data.res);
     } catch (error) {
       console.error("Error fetching quiz data:", error);
@@ -64,10 +69,29 @@ export default function QuizApp() {
     setCurrentQuestion(currentQuestion + 1);
   };
 
-  const handlePublish = () => {
-    // Implement the publish functionality here
-    alert(`Quiz published! Final score: ${score}/${quizData?.quiz.length}`);
-    // You can add API call to save the quiz results or perform any other action
+  const handlePublish = async () => {
+    try {
+      const data = await PublishQuiz(quizData);
+      const id = data[0]?.id;
+      console.log(id);
+
+      if (id) {
+        // Copy the id to the clipboard
+        await navigator.clipboard.writeText(`http://localhost:3000/quiz/${id}`);
+        console.log("ID copied to clipboard!");
+
+        toast({
+          title: "Quiz published!",
+          description:
+            "The URL for the quiz has been copied to your clipboard.",
+        });
+
+        // Redirect to the quiz page
+        router.push(`/quiz/${id}`);
+      }
+    } catch (error) {
+      console.error("Error publishing the quiz:", error);
+    }
   };
 
   const isLastQuestion = quizData
@@ -84,14 +108,14 @@ export default function QuizApp() {
 
   if (!quizData) {
     return (
-      <div className="container mx-auto max-w-2xl p-4">
+      <div className="container mx-auto flex min-h-screen w-[400px] items-center justify-center p-4">
         <Card>
           <CardHeader>
             <CardTitle className="text-2xl font-bold">Quiz App</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
+              <div className="w-[700px] max-md:w-[500px] max-sm:w-[320px]">
                 <Label htmlFor="quiz-topic">Enter quiz topic</Label>
                 <Input
                   id="quiz-topic"
@@ -110,7 +134,7 @@ export default function QuizApp() {
   }
 
   return (
-    <div className="container mx-auto max-w-2xl p-4">
+    <div className="container mx-auto flex min-h-screen max-w-2xl items-center justify-center p-4">
       <Card>
         <CardHeader>
           <CardTitle className="text-2xl font-bold">Quiz App</CardTitle>
